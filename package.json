@@ -1,0 +1,23 @@
+{
+  "name": "messengerchatbot-openai",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": {
+    "name": "Ivan Cotacte",
+    "email": "cotactearmenion@gmail.com"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "npmlog": "^7.0.1",
+    "request": "^2.88.2"
+  },
+  "devDependencies": {
+    "prettier": "3.2.5"
+  }
+}
