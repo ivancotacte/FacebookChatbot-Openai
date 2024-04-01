@@ -5,3 +5,4 @@
 /log/*
 /data/*
 .env
+package-lock.json
