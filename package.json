@@ -25,5 +25,10 @@
     "bugs": {
         "url": "https://github.com/ivancotacte/MessengerChatbot-Openai/issues",
         "email": "cotactearmenion@gmail.com"
+    },
+    "dependencies": {
+        "bluebird": "^2.11.0",
+        "cheerio": "^0.22.0",
+        "request": "^2.88.2"
     }
 }
