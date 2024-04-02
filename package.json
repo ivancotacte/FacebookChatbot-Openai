@@ -1,18 +1,29 @@
 {
-  "name": "projectorion",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "private": true,
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js",
-    "dev": "nodemon index.js"
-  },
-  "keywords": [],
-  "author": {
-    "name": "Ivan Armenion Cotacte",
-    "email": "cotactearmenion@gmail.com"
-  },
-  "license": "GNU"
+    "name": "projectorion",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "private": true,
+    "engines": {
+        "node": ">=20.x"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "node index.js",
+        "dev": "nodemon index.js"
+    },
+    "keywords": [],
+    "author": {
+        "name": "Ivan Armenion Cotacte",
+        "email": "cotactearmenion@gmail.com"
+    },
+    "license": "GNU",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ivancotacte/MessengerChatbot-Openai.git"
+    },
+    "bugs": {
+        "url": "https://github.com/ivancotacte/MessengerChatbot-Openai/issues",
+        "email": "cotactearmenion@gmail.com"
+    }
 }
