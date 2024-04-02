@@ -1,8 +1,9 @@
 {
   "name": "errhjys",
   "version": "1.0.0",
-  "description": "",
+  "description": "A Messenger chatbot designed to assist users in their daily activities while injecting doses of fun, entertainment, and joy into their interactions. Powered by Node.js and OpenAI",
   "main": "index.js",
+  "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
