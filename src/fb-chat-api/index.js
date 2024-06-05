@@ -196,6 +196,7 @@ function buildAPI(globalOptions, html, jar) {
         "sendTypingIndicator",
         "setMessageReaction",
         "setTitle",
+        "shareContact",
         "threadColors",
         "unsendMessage",
         "httpGet",

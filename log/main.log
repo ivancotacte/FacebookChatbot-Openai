@@ -10629,3 +10629,19 @@ stacktrace: Error: Request failed with status code 404
 -----------
 date: 2024-06-04T17:00:06.066Z
 stacktrace: ReferenceError: unlinkIfExists is not defined
+
+-----------
+date: 2024-06-05T10:01:10.050Z
+stacktrace: TypeError: api.shareContact is not a function
+
+-----------
+date: 2024-06-05T10:02:07.971Z
+stacktrace: Error: Cannot find module 'npmlog'
+Require stack:
+- C:\Users\cotac\Desktop\neko\src\fb-chat-api\src\shareContact.js
+- C:\Users\cotac\Desktop\neko\src\fb-chat-api\index.js
+- C:\Users\cotac\Desktop\neko\index.js
+
+-----------
+date: 2024-06-05T10:02:35.366Z
+stacktrace: TypeError: api.shareContact is not a function

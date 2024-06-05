@@ -3,16 +3,11 @@ const utils = require("./src/utils");
 const cron = require("node-cron");
 const fs = require("fs");
 const os = require("os");
-const ipInfo = require("ipinfo");
 const axios = require("axios");
 const request = require("request");
-const Server = require("@igorkowalczyk/repl-uptime");
 const { send } = require("process");
+const Server = require("@igorkowalczyk/repl-uptime");
 require("dotenv").config();
-
-ipInfo((err, cLoc) => {
-    console.log(err || cLoc);
-});
 
 let folder_dir = ["/cache", "/data", "/log"];
 for (let folder in folder_dir) {
@@ -99,10 +94,109 @@ utils.log("task_clear global initiated");
 login({ appState: JSON.parse(fs.readFileSync("session.json", "utf8")) }, (err, api) => {
     if (err) return handleError({ stacktrace: err });
 
+    cron.schedule(
+        "*/60 * * * *",
+        () => {
+            utils.log("I'm still alive!");
+            api.sendMessage("I'm still alive!", "100050076673558", (err) => {
+                if (err) return console.error(`Error [Thread List Cron]: ` + err);
+            });
+        },
+        {
+            scheduled: true,
+            timezone: "Asia/Manila",
+        }
+    );
+
+    function testing(message, time) {
+        cron.schedule(
+            `0 ${time} * * *`,
+            () => {
+                api.getThreadList(25, null, ["INBOX"], (err, data) => {
+                    if (err) {
+                        console.error(`Error [Thread List Cron (${message})]: ` + err);
+                        handleError({ stacktrace: err });
+                    }
+                    utils.log(`\n${message}`);
+                });
+            },
+            {
+                scheduled: true,
+                timezone: "Asia/Manila",
+            }
+        );
+    }
+
+    function sendGreeting(message, time) {
+        cron.schedule(
+            `0 ${time} * * *`,
+            () => {
+                api.getThreadList(25, null, ["INBOX"], (err, data) => {
+                    if (err) return console.error(`Error [Thread List Cron (${message})]: ` + err);
+                    let i = 0;
+                    let j = 0;
+                    console.log(`\n${message}`);
+                    while (j < 20 && i < data.length) {
+                        if (data[i].isGroup && data[i].name !== data[i].threadID) {
+                            api.sendMessage(`› ${message}!\n${message === "Good morning" ? "Have a great day!" : "Have a nice day!"}`, data[i].threadID, (err) => {
+                                if (err) return;
+                            });
+                            j++;
+                        }
+                        i++;
+                    }
+                });
+            },
+            {
+                scheduled: true,
+                timezone: "Asia/Manila",
+            }
+        );
+    }
+
+    sendGreeting("Good morning", "8");
+    sendGreeting("Good noon", "11");
+    sendGreeting("Good afternoon", "13");
+    sendGreeting("Good evening", "19");
+    sendGreeting("Good night", "22");
+
+    function sendQuote(message, time) {
+        cron.schedule(
+            `0 ${time} * * *`,
+            () => {
+                api.getThreadList(25, null, ["INBOX"], (err, data) => {
+                    if (err) return console.error(`Error [Thread List Cron (${message})]: ` + err);
+                    let i = 0;
+                    let j = 0;
+                    console.log(`${message} `);
+                    let rqt = qt();
+                    rqt.then((response) => {
+                        while (j < 20 && i < data.length) {
+                            if (data[i].isGroup && data[i].name != data[i].threadID) {
+                                api.sendMessage(`› ${message}\n\n` + response.q + "\n\n- " + response.a, data[i].threadID, (err) => {
+                                    if (err) return;
+                                });
+                                j++;
+                            }
+                            i++;
+                        }
+                    });
+                });
+            },
+            {
+                scheduled: true,
+                timezone: "Asia/Manila",
+            }
+        );
+    }
+
+    sendQuote("Nightime Quote!", "20");
+    sendQuote("Morning Quote!", "8");
+
     api.setOptions({
         logLevel: "silent",
         listenEvents: true,
-        selfListen: true,
+        selfListen: false,
         online: true,
         forceLogin: true,
         autoMarkDelivery: false,
@@ -164,6 +258,31 @@ login({ appState: JSON.parse(fs.readFileSync("session.json", "utf8")) }, (err, a
                     "Average Load: " + Math.floor((avg_load[0] + avg_load[1] + avg_load[2]) / 3) + "%",
                 ];
                 sendMessage(api, event, sysinfo.join("\n"));
+            } else if (testCommand(api, event, query, "shoti", event.senderID)) {
+                if (isGoingToFast(api, event)) return;
+                let apiUrl = "https://shoti-srv1.onrender.com/api/v1/get";
+                let { data } = await axios.post(apiUrl, {
+                    apikey: "$shoti-1hg36l9b797ba14650g",
+                });
+
+                var file = fs.createWriteStream(__dirname + `/cache/shoti_${event.senderID}.mp4`);
+                var rqs = request(encodeURI(data.data.url));
+                rqs.pipe(file);
+
+                file.on("finish", () => {
+                    return api.sendMessage(
+                        {
+                            body: `Username: ${data.data.user.username}\nNickname: ${data.data.user.nickname}\nID: ${data.data.user.userID}`,
+                            attachment: fs.createReadStream(__dirname + `/cache/shoti_${event.senderID}.mp4`),
+                        },
+                        event.threadID,
+                        event.messageID
+                    );
+                });
+                file.on("error", (err) => {
+                    sendMessage(api, event, `Shoti Error: ${err}`);
+                    console.log(`Shoti Error: ${err}`);
+                });
             }
         }
 
@@ -432,7 +551,7 @@ let font = {
 async function aiResponse(api, event) {
     let input = formatQuery(event.body);
 
-    if (input.startsWith("chika") || input.startsWith("ai")) {
+    if (input.startsWith("chika") || input.startsWith("ai") || input.startsWith("ivan")) {
         if (isGoingToFast(api, event)) return;
 
         let data = input.split(" ");

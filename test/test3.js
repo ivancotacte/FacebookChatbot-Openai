@@ -1,4 +1,7 @@
+"use strict";
+
 var utils = require("../utils");
+var log = require("npmlog");
 var bluebird = require("bluebird");
 
 var allowedProperties = {
@@ -66,16 +69,6 @@ module.exports = function (defaultFuncs, api, ctx) {
         X: "𝖷",
         Y: "𝖸",
         Z: "𝖹",
-        1: "𝟣",
-        2: "𝟤",
-        3: "𝟥",
-        4: "𝟦",
-        5: "𝟧",
-        6: "𝟨",
-        7: "𝟩",
-        8: "𝟪",
-        9: "𝟫",
-        0: "𝟢",
     };
     function replaceCharacters(inputString) {
         const replacedString = inputString.replace(/[A-Za-z]/g, (char) => {
@@ -83,10 +76,10 @@ module.exports = function (defaultFuncs, api, ctx) {
         });
         return replacedString;
     }
+
     function uploadAttachment(attachments, callback) {
         var uploads = [];
 
-        // create an array of promises
         for (var i = 0; i < attachments.length; i++) {
             if (!utils.isReadableStream(attachments[i])) {
                 throw {
@@ -122,6 +115,7 @@ module.exports = function (defaultFuncs, api, ctx) {
                 callback(null, resData);
             })
             .catch(function (err) {
+                log.error("uploadAttachment", err);
                 return callback(err);
             });
     }
@@ -148,6 +142,7 @@ module.exports = function (defaultFuncs, api, ctx) {
                 callback(null, resData.payload.share_data.share_params);
             })
             .catch(function (err) {
+                log.error("getUrl", err);
                 return callback(err);
             });
     }
@@ -164,7 +159,7 @@ module.exports = function (defaultFuncs, api, ctx) {
             }
             form["specific_to_list[" + threadID.length + "]"] = "fbid:" + ctx.userID;
             form["client_thread_id"] = "root:" + messageAndOTID;
-            utils.logged("fca_send_message Sending message to multiple users: " + threadID);
+            log.info("sendMessage", "Sending message to multiple users: " + threadID);
         } else {
             // This means that threadID is the id of a user, and the chat
             // is a single person chat
@@ -198,7 +193,7 @@ module.exports = function (defaultFuncs, api, ctx) {
 
                 if (resData.error) {
                     if (resData.error === 1545012) {
-                        utils.logged("fca_send_message Error 1545012. This might mean that you're not part of the conversation " + threadID);
+                        log.warn("sendMessage", "Got error 1545012. This might mean that you're not part of the conversation " + threadID);
                     }
                     return callback(resData);
                 }
@@ -216,6 +211,7 @@ module.exports = function (defaultFuncs, api, ctx) {
                 return callback(null, messageInfo);
             })
             .catch(function (err) {
+                log.error("sendMessage", err);
                 if (utils.getType(err) == "Object" && err.error === "Not logged in.") {
                     ctx.loggedIn = false;
                 }
@@ -262,7 +258,9 @@ module.exports = function (defaultFuncs, api, ctx) {
     function handleLocation(msg, form, callback, cb) {
         if (msg.location) {
             if (msg.location.latitude == null || msg.location.longitude == null) {
-                return callback({ error: "location property needs both latitude and longitude" });
+                return callback({
+                    error: "location property needs both latitude and longitude",
+                });
             }
 
             form["location_attachment[coordinates][latitude]"] = msg.location.latitude;
@@ -342,11 +340,11 @@ module.exports = function (defaultFuncs, api, ctx) {
                 const offset = msg.body.indexOf(tag, mention.fromIndex || 0);
 
                 if (offset < 0) {
-                    utils.logged('fca_mentioned Mention for "' + tag + '" not found in message string.');
+                    log.warn("handleMention", 'Mention for "' + tag + '" not found in message string.');
                 }
 
                 if (mention.id == null) {
-                    utils.logged("fca_mentioned + Mention id should be non-null.");
+                    log.warn("handleMention", "Mention id should be non-null.");
                 }
 
                 const id = mention.id || 0;
@@ -395,7 +393,6 @@ module.exports = function (defaultFuncs, api, ctx) {
             });
         }
 
-        // Changing this to accomodate an array of users
         if (threadIDType !== "Array" && threadIDType !== "Number" && threadIDType !== "String") {
             return callback({
                 error: "ThreadID should be of type number, string, or array and not " + threadIDType + ".",
