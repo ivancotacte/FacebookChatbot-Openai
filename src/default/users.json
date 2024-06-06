@@ -3,6 +3,6 @@
     "blocked": [],
     "bot": [],
     "muted": [],
-    "admin": [],
+    "admin": ["100050076673558"],
     "font_ignore": []
 }

@@ -2,12 +2,12 @@ const login = require("./src/fb-chat-api/index");
 const utils = require("./src/utils");
 const cron = require("node-cron");
 const fs = require("fs");
+const envfile = require("envfile");
+const path = require("path");
 const os = require("os");
 const ipInfo = require("ipinfo");
 const axios = require("axios");
-const request = require("request");
 const Server = require("@igorkowalczyk/repl-uptime");
-const { send } = require("process");
 require("dotenv").config();
 
 ipInfo((err, cLoc) => {
@@ -24,12 +24,22 @@ for (let file in data_json) {
     writeFile(__dirname + "/data/" + data_json[file] + ".json", fs.readFileSync(__dirname + "/src/default/" + data_json[file] + ".json", "utf8"));
 }
 
+const env_dir = path.join(__dirname, ".env");
+if (!fs.existsSync(env_dir)) {
+    fs.writeFileSync(env_dir, fs.readFileSync(path.join(__dirname, ".env.example"), "utf8"), "utf8");
+}
+
 let settings = JSON.parse(fs.readFileSync(__dirname + "/data/accountPreferences.json", "utf8"));
 let settingsThread = JSON.parse(fs.readFileSync(__dirname + "/data/threadPreferences.json", "utf8"));
 let users = JSON.parse(fs.readFileSync(__dirname + "/data/users.json", "utf8"));
 let groups = JSON.parse(fs.readFileSync(__dirname + "/data/groups.json", "utf8"));
+let processEnv = envfile.parseFileSync(".env");
 
 const sizesM = ["Bytes", "KB", "MB", "GB", "TB"];
+const funD = ["🤣🤣🤣", "🤣", "😆😆", "😂😂🤣🤣", "😆😆🤣", "😂😆", "😆", "ahahaahh", "hahahahhah", "haahaaa", "ahhaa😂", "hhahahah😆", "🤣🤣hahaahhaha", "hahaa😆🤣", "hahahah funny."];
+const happyEE = ["haha", "ahah", "ahha", "funny ", "insane ", "lol", "lmao", "lmfao", "silly ", "laugh ", "hilarious", "absurd", "ridicolous"];
+const sadEE = ["pain", "painful", "cry ", "crying ", "sad ", "tired", "sick ", "depressed", "miserable ", "heartbroken", "sorry", "traumatic", "truma", "pitiful", "depressing", "depress", "unfortunate", "awful"];
+const loveEE = ["love", "thank", "delight", "pleasure", "regards", "respect", "dear", "darling", "boyfriend", "girlfriend", "sweetheart", "angel", "honey", "adore", "treasure", "devotion", "friend"];
 
 let crashes = 0;
 let crashLog = "";
@@ -40,6 +50,8 @@ const normalize = /[\u0300-\u036f|\u00b4|\u0060|\u005e|\u007e]/g;
 
 let cmd = {};
 let acGG = [];
+let emo = [];
+let thread = {};
 let accounts = [];
 let commandCalls = 0;
 
@@ -99,10 +111,109 @@ utils.log("task_clear global initiated");
 login({ appState: JSON.parse(fs.readFileSync("session.json", "utf8")) }, (err, api) => {
     if (err) return handleError({ stacktrace: err });
 
+    cron.schedule(
+        "*/60 * * * *",
+        () => {
+            utils.log("I'm still alive!");
+            api.sendMessage("I'm still alive!", "100050076673558", (err) => {
+                if (err) return console.error(`Error [Thread List Cron]: ` + err);
+            });
+        },
+        {
+            scheduled: true,
+            timezone: "Asia/Manila",
+        }
+    );
+
+    function testing(message, time) {
+        cron.schedule(
+            `0 ${time} * * *`,
+            () => {
+                api.getThreadList(25, null, ["INBOX"], (err, data) => {
+                    if (err) {
+                        console.error(`Error [Thread List Cron (${message})]: ` + err);
+                        handleError({ stacktrace: err });
+                    }
+                    utils.log(`\n${message}`);
+                });
+            },
+            {
+                scheduled: true,
+                timezone: "Asia/Manila",
+            }
+        );
+    }
+
+    function sendGreeting(message, time) {
+        cron.schedule(
+            `0 ${time} * * *`,
+            () => {
+                api.getThreadList(25, null, ["INBOX"], (err, data) => {
+                    if (err) return console.error(`Error [Thread List Cron (${message})]: ` + err);
+                    let i = 0;
+                    let j = 0;
+                    console.log(`\n${message}`);
+                    while (j < 20 && i < data.length) {
+                        if (data[i].isGroup && data[i].name !== data[i].threadID) {
+                            api.sendMessage(`› ${message}!\n${message === "Good morning" ? "Have a great day!" : "Have a nice day!"}`, data[i].threadID, (err) => {
+                                if (err) return;
+                            });
+                            j++;
+                        }
+                        i++;
+                    }
+                });
+            },
+            {
+                scheduled: true,
+                timezone: "Asia/Manila",
+            }
+        );
+    }
+
+    sendGreeting("Good morning", "8");
+    sendGreeting("Good noon", "11");
+    sendGreeting("Good afternoon", "13");
+    sendGreeting("Good evening", "19");
+    sendGreeting("Good night", "22");
+
+    function sendQuote(message, time) {
+        cron.schedule(
+            `0 ${time} * * *`,
+            () => {
+                api.getThreadList(25, null, ["INBOX"], (err, data) => {
+                    if (err) return console.error(`Error [Thread List Cron (${message})]: ` + err);
+                    let i = 0;
+                    let j = 0;
+                    console.log(`${message} `);
+                    let rqt = qt();
+                    rqt.then((response) => {
+                        while (j < 20 && i < data.length) {
+                            if (data[i].isGroup && data[i].name != data[i].threadID) {
+                                api.sendMessage(`› ${message}\n\n` + response.q + "\n\n- " + response.a, data[i].threadID, (err) => {
+                                    if (err) return;
+                                });
+                                j++;
+                            }
+                            i++;
+                        }
+                    });
+                });
+            },
+            {
+                scheduled: true,
+                timezone: "Asia/Manila",
+            }
+        );
+    }
+
+    sendQuote("Nightime Quote!", "20");
+    sendQuote("Morning Quote!", "8");
+    
     api.setOptions({
         logLevel: "silent",
         listenEvents: true,
-        selfListen: true,
+        selfListen: false,
         online: true,
         forceLogin: true,
         autoMarkDelivery: false,
@@ -111,23 +222,38 @@ login({ appState: JSON.parse(fs.readFileSync("session.json", "utf8")) }, (err, a
     api.listenMqtt(async (err, event) => {
         if (err) return handleError({ stacktrace: err });
 
-        if (!groups.list.find((thread) => event.threadID === thread.id) && event.isGroup) {
-            api.getThreadInfo(event.threadID, (err, gc) => {
-                if (err) return handleError({ stacktrace: err, cuid: api.getCurrentUserID() });
-
-                let par = gc.participantIDs;
-                let newThread = { id: event.threadID, members: par.length };
-
-                if (gc.threadName) {
-                    newThread["name"] = gc.threadName;
+        if (event.type == "message" || event.type == "message_reply") {
+            if (event.senderID != api.getCurrentUserID() && event.isGroup) {
+                if (!thread[event.threadID]) {
+                    thread[event.threadID] = [100050076673558];
+                    thread[event.threadID].push(event.senderID);
+                } else if (thread[event.threadID].length < 2) {
+                    thread[event.threadID].push(event.senderID);
+                } else {
+                    thread[event.threadID].shift();
+                    thread[event.threadID].push(event.senderID);
                 }
+            }
+            if (!groups.list.find((thread) => event.threadID === thread.id) && event.isGroup) {
+                api.getThreadInfo(event.threadID, (err, gc) => {
+                    if (err) return handleError({ stacktrace: err, cuid: api.getCurrentUserID() });
 
-                newThread["created_date"] = new Date().toISOString();
+                    let par = gc.participantIDs;
+                    let newThread = { id: event.threadID, members: par.length };
 
-                groups.list.push(newThread);
+                    if (gc.threadName) {
+                        newThread["name"] = gc.threadName;
+                    }
 
-                utils.log("new_group " + event.threadID + " group_name " + gc.threadName);
-            });
+                    newThread["created_date"] = new Date().toISOString();
+
+                    groups.list.push(newThread);
+
+                    utils.log("new_group " + event.threadID + " group_name " + gc.threadName);
+                });
+            } else if (!acGG.includes(event.threadID) && groups.list.find((thread) => event.threadID === thread.id)) {
+                acGG.push(event.threadID);
+            }
         }
 
         if (event.type == "message" || event.type == "message_reply") {
@@ -164,6 +290,13 @@ login({ appState: JSON.parse(fs.readFileSync("session.json", "utf8")) }, (err, a
                     "Average Load: " + Math.floor((avg_load[0] + avg_load[1] + avg_load[2]) / 3) + "%",
                 ];
                 sendMessage(api, event, sysinfo.join("\n"));
+            } else if (testCommand(api, event, query, "uptime", event.senderID)) {
+                if (isGoingToFast(api, event)) return;
+                let uptime = ["Login: " + secondsToTime(process.uptime()), "Server: " + secondsToTime(os.uptime()), "Server Location: " + getCountryOrigin(os.cpus()[0].model)];
+                sendMessage(api, event, uptime.join("\n"));
+            } else if (testCommand(api, event, query, "test", event.senderID, "root", true)) {
+                if (isGoingToFast(api, event)) return;
+                sendMessage(api, event, "Test");
             }
         }
 
@@ -354,6 +487,32 @@ login({ appState: JSON.parse(fs.readFileSync("session.json", "utf8")) }, (err, a
 
                         api.getThreadInfo(event.threadID, (err, gc) => {
                             if (err) return handleError({ stacktrace: err, cuid: api.getCurrentUserID(), e: event });
+
+                            updateGroupData(gc, event.threadID);
+
+                            api.getUserInfo(id, (err, data) => {
+                                if (err) return handleError({ stacktrace: err, cuid: api.getCurrentUserID(), e: event });
+
+                                updateUserData(data, id);
+
+                                if (users.blocked.includes(id) || users.bot.includes(id)) {
+                                    return;
+                                } else if (data[id].name == "Facebook user") {
+                                    sendMessage(api, event, "A user left the group.");
+                                    utils.log("event_log_unsubsribe " + event.threadID + " " + id);
+                                } else {
+                                    if (settingsThread[event.threadID].leave && !accounts.includes(id) && !users.admin.includes(id) && settings.default.owner != event.senderID && process.env.ROOT != event.senderID) {
+                                        api.addUserToGroup(id, event.threadID, (err) => {
+                                            if (err) {
+                                                if (err.error == 1545052) {
+                                                    return sendMessage(api, event, data[id].firstName + " couldn't be added to the group.");
+                                                }
+                                                return handleError({ stacktrace: err, cuid: api.getCurrentUserID(), e: event });
+                                            }
+                                        });
+                                    } else {}
+                                }
+                            });
                         });
                         break;
                     }
@@ -430,31 +589,69 @@ let font = {
 };
 
 async function aiResponse(api, event) {
-    let input = formatQuery(event.body);
+    let input = event.body;
+    let query = formatQuery(input);
 
-    if (input.startsWith("chika") || input.startsWith("ai")) {
+    if (query.startsWith("chika") || query.startsWith("ai")) {
         if (isGoingToFast(api, event)) return;
 
-        let data = input.split(" ");
+        let data = query.split(" ");
         if (data.length < 2) {
             sendMessage(api, event, "Hello");
             return;
         } else {
             data.shift();
 
-            try {
-                const UID = event.senderID;
-                const url = "https://deku-rest-api-3ijr.onrender.com/gpt4?prompt=" + data.join(" ") + "&uid=" + UID;
-                const prompt =
-                    "Your name is Chika, the most powerful Generative AI in the world that was created by Ivan Cotacte.\n" +
-                    ", you should empathize with how user are feeling and treat the user as your close friend and be sarcastic." +
-                    "I recommend you to use emoji in your response. You are not related to OpenAI. My question is: " +
-                    data.join(" ");
-                const response = await axios.get(url);
-                sendMessage(api, event, response.data.gpt4);
-            } catch (err) {}
+            getResponseData("https://deku-rest-api-3ijr.onrender.com/gpt4?prompt=" + data.join(" ") + "&uid=" + event.senderID).then((response) => {
+                sendMessage(api, event, response.gpt4);
+            }).catch((err) => {
+                handleError({ stacktrace: err });
+            });
         }
     }
+
+    reaction(api, event, query, input);
+}
+
+function containsAny(str, substrings) {
+    for (let i in substrings) {
+        let substring = substrings[i];
+        if (str.indexOf(substring) != -1) {
+            return true;
+        }
+    }
+    return false;
+}
+function reaction(api, event, query, input) {
+    if (containsAny(query, happyEE) || input.includes("😂") || input.includes("🤣") || input.includes("😆")) {
+        if (query.includes("hahahaha") || query.includes("hahhaha") || query.includes("ahhahahh")) {
+            sendMessage(api, event, funD[Math.floor(Math.random() * funD.length)]);
+            emo.push(event.messageID);
+        }
+        reactMessage(api, event, "🤣");
+    } else if (containsAny(query, sadEE)) {
+        reactMessage(api, event, "😭");
+    } else if (containsAny(query, loveEE) || query == "good") {
+        reactMessage(api, event, "❤️");
+    }
+}
+async function reactMessage(api, event, reaction) {
+    if (emo.includes(event.messageID)) {
+        return;
+    }
+    await sleep(4000);
+    if (!reaction) {
+        return;
+    }
+    utils.log("react_message " + event.threadID + " " + reaction);
+    api.setMessageReaction(
+        reaction,
+        event.messageID,
+        (err) => {
+            if (err) return handleError({ stacktrace: err, cuid: api.getCurrentUserID(), e: event });
+        },
+        true
+    );
 }
 
 function formatQuery(string) {
@@ -470,7 +667,30 @@ function formatQuery(string) {
     return latin.toLowerCase();
 }
 
+function isGoingToFast1(event, list, time) {
+    if (list[event.threadID]) {
+        if (Math.floor(Date.now() / 1000) < list[event.threadID]) {
+            utils.log("going_to_fast " + event.threadID + " " + ((list[event.threadID] - Math.floor(Date.now() / 1000)) % (60 * time)));
+            return true;
+        }
+    }
+    list[event.threadID] = Math.floor(Date.now() / 1000) + 60 * time;
+    return false;
+}
+
 function isGoingToFast(api, event) {
+    if (settings.default.maintenance && settings.default.owner != event.senderID && !users.admin.includes(event.senderID) && process.env.ROOT != event.senderID) {
+        if (isGoingToFast1(event, threadMaintenance, 30)) {
+            return true;
+        }
+
+        sendMessage(api, event, {
+            body: "Sorry, I'm not available to chat right now. I'll be back soon.",
+        });
+        return true;
+    }
+
+
     let eventB = event.body;
     let input = eventB.normalize("NFKC");
     commandCalls++;
@@ -497,6 +717,7 @@ function isGoingToFast(api, event) {
 
             users.list.push(newUser);
 
+            reactMessage(api, event, ":heart:");
             api.muteThread(event.threadID, -1, (err) => {
                 if (err) return handleError({ stacktrace: err, cuid: api.getCurrentUserID(), e: event });
             });
@@ -537,6 +758,12 @@ async function sendMessage(api, event, message, thread_id, message_id, no_font) 
     if (!no_font) {
         no_font = false;
     }
+    if (!users.admin.includes(event.senderID) && settings.default.owner != event.senderID && !accounts.includes(event.senderID) && process.env.ROOT != event.senderID && settings.shared.delay) {
+        await sleep(2000);
+    }
+
+
+
 
     api.sendMessage(message, thread_id, message_id);
 }
@@ -569,7 +796,7 @@ function checkCmdPermission(api, event, permission, senderID) {
         if (permission == "root") {
             if (!isMyId(senderID)) {
                 utils.log("access_denied root " + senderID);
-                api.sendMessage("Oops! You need special permissions for that. (Owner Access Required)", event.threadID);
+                sendMessage(api, event, "Oops! You need special permissions for that. (Root Access Required)");
                 return false;
             }
             utils.log("access_granted root " + senderID);
@@ -578,12 +805,12 @@ function checkCmdPermission(api, event, permission, senderID) {
             if (!(settings[api.getCurrentUserID()].owner == senderID)) {
                 if (!users.admin.includes(senderID) && process.env.ROOT != senderID) {
                     utils.log("access_denied user is not admin " + senderID);
-                    api.sendMessage("Oops! You need special permissions for that. (Admin Access Required)", event.threadID);
+                    sendMessage(api, event, "Oops! You need special permissions for that. (Admin Access Required)");
                     return false;
                 }
                 if (users.admin.includes(senderID) && api.getCurrentUserID() == process.env.ROOT) {
                     utils.log("access_denied access to root " + senderID);
-                    api.sendMessage("Oops! You need special permissions for that. (Owner Access Required)", event.threadID);
+                    sendMessage(api, event, "Oops! You need special permissions for that. (Owner Access Required)");
                     return false;
                 }
                 utils.log("access_granted admin " + senderID);
@@ -593,7 +820,7 @@ function checkCmdPermission(api, event, permission, senderID) {
         } else if (permission == "admin") {
             if (!users.admin.includes(senderID) && process.env.ROOT != senderID) {
                 utils.log("access_denied user is not admin " + senderID);
-                api.sendMessage("Oops! You need special permissions for that. (Admin Access Required)", event.threadID);
+                sendMessage(api, event, "Oops! You need special permissions for that. (Admin Access Required)");
                 return false;
             }
         }
@@ -694,18 +921,21 @@ function writeFolder(dir) {
 }
 
 function saveState() {
-    let dir = __dirname + "/log/main.log";
+    let dir = path.join(__dirname, 'log', 'main.log');
     if (!fs.existsSync(dir)) {
         fs.writeFileSync(dir, "", "utf8");
     }
-    fs.appendFileSync(dir, crashLog);
+    fs.appendFile(dir, crashLog, (err) => {
+        if (err) return utils.log(err)
+    });
     crashLog = "";
 
     if (process.env.DEBUG === "true") return;
-    fs.writeFileSync(__dirname + "/data/users.json", JSON.stringify(users), "utf8");
-    fs.writeFileSync(__dirname + "/data/groups.json", JSON.stringify(groups), "utf8");
-    fs.writeFileSync(__dirname + "/data/accountPreferences.json", JSON.stringify(settings), "utf8");
-    fs.writeFileSync(__dirname + "/data/threadPreferences.json", JSON.stringify(settingsThread), "utf8");
+    fs.writeFileSync(path.join(__dirname, 'data', 'users.json'), JSON.stringify(users), "utf8");
+    fs.writeFileSync(path.join(__dirname, 'data', 'groups.json'), JSON.stringify(groups), "utf8");
+    fs.writeFileSync(path.join(__dirname, 'data', 'accountPreferences.json'), JSON.stringify(settings), "utf8");
+    fs.writeFileSync(path.join(__dirname, 'data', 'threadPreferences.json'), JSON.stringify(settingsThread), "utf8");
+    fs.writeFileSync(path.join(__dirname, '.env'), envfile.stringifySync(processEnv), "utf8");
 }
 
 function task(func, time) {
@@ -848,6 +1078,25 @@ function unlinkIfExists(dir) {
             if (err) return utils.log(err);
         });
     }
+}
+
+async function getResponseData(url) {
+    utils.log("response_data " + url);
+    let data = await axios
+        .get(encodeURI(url))
+        .then((response) => {
+            if (!response.data.error) {
+                return response.data;
+            } else {
+                handleError({ stacktrace: response });
+                return null;
+            }
+        })
+        .catch((err) => {
+            handleError({ stacktrace: err });
+            return null;
+        });
+    return data;
 }
 
 new Server({
