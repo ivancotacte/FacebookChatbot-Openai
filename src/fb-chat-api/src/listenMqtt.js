@@ -126,7 +126,7 @@ function listenMqtt(defaultFuncs, api, ctx, globalCallback) {
 	};
 
 	if (typeof ctx.globalOptions.proxy != "undefined") {
-		const agent = new HttpsProxyAgent("http://38.154.227.167:5868");
+		const agent = new HttpsProxyAgent("http://188.74.210.207:6286");
 		options.wsOptions.agent = agent;
 	}
 
