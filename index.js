@@ -874,8 +874,28 @@ function handleError(err) {
     };
 }
 
+function updateUserData(user, uid) {
+    utils.getGroupProfile(users, uid, async function (name) {
+        if (name) {
+            name["name"] = user[uid].name;
+
+            if (user[uid].firstName != "") {
+                name["firstName"] = user[uid].firstName;
+            }
+            if (user[uid].vanity != "") {
+                name["userName"] = user[uid].vanity;
+            }
+            if (user[uid].gender != "") {
+                name["gender"] = user[uid].gender;
+            }
+
+            name["updated_date"] = new Date().toISOString();
+        }
+    });
+}
+
 function updateGroupData(gc, gid) {
-    utils.getProfile(groups, gid, async function (group) {
+    utils.getGroupProfile(groups, gid, async function (group) {
         if (group) {
             if (gc.threadName) {
                 group["name"] = gc.threadName;
@@ -888,6 +908,7 @@ function updateGroupData(gc, gid) {
         }
     });
 }
+
 
 async function qt() {
     let qoute = await axios
