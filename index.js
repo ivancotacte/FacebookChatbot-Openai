@@ -171,6 +171,19 @@ login({ appState: JSON.parse(fs.readFileSync("session.json", "utf8")) }, (err, a
     sendQuote("Nightime Quote!", "20");
     sendQuote("Morning Quote!", "8");
 
+
+    cron.schedule(
+        "*/60 * * * *",
+        () => {
+            utils.log("Restarting program...");
+            process.exit(0);
+
+        },
+        {
+            scheduled: true,
+            timezone: "Asia/Manila",
+        }
+    );
     api.setOptions({
         logLevel: "silent",
         listenEvents: true,
@@ -886,6 +899,23 @@ async function qt() {
             return "err ";
         });
     return qoute;
+}
+
+function deleteCacheData(mode) {
+    fs.readdir(__dirname + "/cache/", function (err, files) {
+        if (err) return handleError({ stacktrace: err });
+        if (files.length > 0) {
+            for (let fe in files) {
+                let file = files[fe];
+                if (mode) {
+                    unlinkIfExists(__dirname + "/cache/" + file);
+                    utils.log("delete_cache " + unlinkIfExists);
+                } else {
+                    unLink(__dirname + "/cache/" + file);
+                }
+            }
+        }
+    });
 }
 
 new Server({
